@@ -1,4 +1,4 @@
-package com.mas2022datascience.springtracabworker01.admin;
+package com.mas2022datascience.tracabworker01.admin;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.TopicConfig;

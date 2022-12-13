@@ -1,10 +1,10 @@
-package com.mas2022datascience.springtracabworker01;
+package com.mas2022datascience.tracabworker01;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class SpringTracabWorker01ApplicationTests {
+class TracabWorker01ApplicationTests {
 
 	@Test
 	void contextLoads() {

@@ -1,4 +1,4 @@
-package com.mas2022datascience.springtracabworker01.processor;
+package com.mas2022datascience.tracabworker01.processor;
 
 import com.mas2022datascience.avro.v1.Frame;
 import com.mas2022datascience.avro.v1.Object;
