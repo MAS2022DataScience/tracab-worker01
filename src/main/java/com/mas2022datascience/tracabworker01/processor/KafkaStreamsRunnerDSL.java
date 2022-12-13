@@ -36,6 +36,16 @@ public class KafkaStreamsRunnerDSL {
 
   @Value(value = "${topic.tracab-02.name}") private String topicOut;
 
+  @Value(value = "${maxima.velocity}") private double velocityMaximalValue;
+
+  private static double VELOCITY_MAXIMAL_VALUE_STATIC;
+
+  @Value("${maxima.velocity}")
+  public void setNameStatic(double velocityMaximalValue){
+    KafkaStreamsRunnerDSL.VELOCITY_MAXIMAL_VALUE_STATIC = velocityMaximalValue;
+  }
+
+
   @Bean
   public KStream<String, Frame> kStream(StreamsBuilder kStreamBuilder) {
 
@@ -117,7 +127,9 @@ public class KafkaStreamsRunnerDSL {
               oldObjectsMap.get(actualObject.getId()),
               oldFrame.getUtc()).orElse(null));
           actualObject.setDistance(getEuclidianDistance(actualObject,
-              oldObjectsMap.get(actualObject.getId())).orElse(null));
+              value.getUtc(),
+              oldObjectsMap.get(actualObject.getId()),
+              oldFrame.getUtc()).orElse(null));
         }
       });
 
@@ -134,21 +146,34 @@ public class KafkaStreamsRunnerDSL {
    * calculates the euclidian distance [m] between two points in a 3 dimensional space
    *
    * @param actualObject  of type Object
-   *                      <Obj type="7" id="0" x="4111" y="2942" z="11" sampling="0" />
+   *      <Obj type="7" id="0" x="4111" y="2942" z="11" sampling="0" />
+   * @param actualUtc UTC time as a String
    * @param oldObject     of type Object
-   *                      <Obj type="7" id="0" x="4111" y="2942" z="11" sampling="0" />
+   *      <Obj type="7" id="0" x="4111" y="2942" z="11" sampling="0" />
+   * @param oldUtc UTC time as a String
    * @return distance     of type double in meters
-   *                      between 2 points in a 3 dimensional space
+   *                      between 2 points in a 3 dimensional space.
    */
-  private static Optional<Double> getEuclidianDistance(Object actualObject, Object oldObject) {
+  private static Optional<Double> getEuclidianDistance(Object actualObject, String actualUtc,
+      Object oldObject, String oldUtc) {
     // represents the divisor that is needed to get m. Ex. cm to m means 100 as 100cm is 1m
     int distanceUnitDivisor = 100;
-    return Optional.of(
-        Math.sqrt(
-          Math.pow(oldObject.getX()-actualObject.getX(), 2) + Math.pow(oldObject.getY()-actualObject.getY(), 2)
+
+    double euclidianDistance = Math.sqrt(
+            Math.pow(oldObject.getX()-actualObject.getX(), 2)
+            + Math.pow(oldObject.getY()-actualObject.getY(), 2)
             + Math.pow(oldObject.getZ()-actualObject.getZ(), 2)
-        ) / distanceUnitDivisor
-    );
+            ) / distanceUnitDivisor;
+    double timeDifference = getTimeDifference(actualUtc, oldUtc);
+
+    // if the distance is higher than 0, then an empty optional is returned
+    // v_max= velocity world record holder Arjen Robben mit 37 km/h (10.277777778m/s)
+    // s_max=v_max*timedifference=10,2m/s∗0.04s= 0.408m = 40.8cm
+    if (euclidianDistance < (VELOCITY_MAXIMAL_VALUE_STATIC * timeDifference)) {
+      return Optional.of(euclidianDistance);
+    } else {
+      return Optional.empty();
+    }
   }
 
   /**
@@ -166,6 +191,7 @@ public class KafkaStreamsRunnerDSL {
   /**
    * calculates the velocity between two points
    * math: velocity = delta distance [m] / delta time [s] (linear velocity)
+   * if calculated velocity is greater than velocityMaximalValue, the velocity is set to null
    * @param actualObject of type Object
    * <Obj type="7" id="0" x="4111" y="2942" z="11" sampling="0" />
    * @param actualUtc UTC time as a String
@@ -177,13 +203,19 @@ public class KafkaStreamsRunnerDSL {
   private static Optional<Double> calcVelocity(Object actualObject, String actualUtc,
       Object oldObject, String oldUtc) {
     double timeDifference = getTimeDifference(actualUtc, oldUtc);
-    Optional<Double> distanceDifference = getEuclidianDistance(actualObject, oldObject);
+    Optional<Double> distanceDifference = getEuclidianDistance(actualObject,
+        actualUtc, oldObject, oldUtc);
 
     if (distanceDifference.isPresent()) {
       if (timeDifference == 0) {
         return Optional.empty();
       } else {
-        return Optional.of(distanceDifference.get() / timeDifference);
+        double velocity = distanceDifference.get() / timeDifference;
+        if (velocity < VELOCITY_MAXIMAL_VALUE_STATIC) {
+          return Optional.of(velocity);
+        } else {
+          return Optional.empty();
+        }
       }
     } else {
       return Optional.empty();

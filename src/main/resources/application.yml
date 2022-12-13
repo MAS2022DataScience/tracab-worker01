@@ -8,6 +8,11 @@ topic:
     replication-factor: 2
     partitions: 3
 
+maxima:
+  #v_max= velocity world record holder Arjen Robben with 37 km/h (10.277777778m/s)
+  #http://www.deinfussballtrainer.de/top-10-die-schnellsten-fussballer-der-welt/
+  velocity: 10.277777778
+
 spring:
   application:
     name: "tracab-worker01"
