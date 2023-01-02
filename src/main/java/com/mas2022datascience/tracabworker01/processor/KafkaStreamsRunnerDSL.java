@@ -172,7 +172,12 @@ public class KafkaStreamsRunnerDSL {
     if (euclidianDistance < (VELOCITY_MAXIMAL_VALUE_STATIC * timeDifference)) {
       return Optional.of(euclidianDistance);
     } else {
-      return Optional.empty();
+      // except the ball
+      if (actualObject.getType() == 7) {
+        return Optional.of(euclidianDistance);
+      } else {
+        return Optional.empty();
+      }
     }
   }
 
@@ -214,7 +219,12 @@ public class KafkaStreamsRunnerDSL {
         if (velocity < VELOCITY_MAXIMAL_VALUE_STATIC) {
           return Optional.of(velocity);
         } else {
-          return Optional.empty();
+          // except the ball
+          if (actualObject.getType() == 7) {
+            return Optional.of(velocity);
+          } else {
+            return Optional.empty();
+          }
         }
       }
     } else {
